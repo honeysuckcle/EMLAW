@@ -13,6 +13,7 @@ from utils.lr_schedule import inv_lr_scheduler
 from utils.defaults import get_dataloaders, get_models
 from eval import test
 import argparse
+from utils.LogitNorm import LogitNorm
 
 parser = argparse.ArgumentParser(description='Pytorch OVANet',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -123,9 +124,11 @@ def train():
         out_s = C1(feat)
         out_open = C2(feat)
         ## source classification loss
+        out_s = LogitNorm(out_s)
         loss_s = criterion(out_s, label_s)
         ## open set loss for source
         out_open = out_open.view(out_s.size(0), 2, -1)
+        out_open = LogitNorm(out_open, dim=1)
         open_loss_pos, open_loss_neg = ova_loss(out_open, label_s)
         ## b x 2 x C
         loss_open = 0.5 * (open_loss_pos + open_loss_neg)

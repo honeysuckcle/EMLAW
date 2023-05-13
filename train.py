@@ -47,6 +47,9 @@ parser.add_argument("--save_path", type=str,
 parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
+parser.add_argument('--logit_norm', type=float,
+                    default=0.1,
+                    help='use logitNorm')
 args = parser.parse_args()
 
 config_file = args.config
@@ -56,6 +59,7 @@ conf = easydict.EasyDict(conf)
 gpu_devices = ','.join([str(id) for id in args.gpu_devices])
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_devices
 args.cuda = torch.cuda.is_available()
+logit_norm = args.logit_norm
 
 source_data = args.source_data
 target_data = args.target_data
@@ -75,6 +79,7 @@ inputs["conf"] = conf
 inputs["script_name"] = script_name
 inputs["num_class"] = num_class
 inputs["config_file"] = config_file
+inputs["logit_norm"] = logit_norm
 
 source_loader, target_loader, \
 test_loader, target_folder = get_dataloaders(inputs)
@@ -124,11 +129,11 @@ def train():
         out_s = C1(feat)
         out_open = C2(feat)
         ## source classification loss
-        out_s = LogitNorm(out_s)
+        out_s = LogitNorm(out_s, temp=logit_norm)
         loss_s = criterion(out_s, label_s)
         ## open set loss for source
         out_open = out_open.view(out_s.size(0), 2, -1)
-        out_open = LogitNorm(out_open, dim=1)
+        out_open = LogitNorm(out_open, dim=1, temp=logit_norm)
         open_loss_pos, open_loss_neg = ova_loss(out_open, label_s)
         ## b x 2 x C
         loss_open = 0.5 * (open_loss_pos + open_loss_neg)

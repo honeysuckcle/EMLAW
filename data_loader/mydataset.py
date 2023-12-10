@@ -93,17 +93,19 @@ class ImageFolder(data.Dataset):
         imgs (list): List of (image path, class_index) tuples
     """
 
-    def __init__(self, image_list, transform=None, target_transform=None, return_paths=False,
-                 loader=default_loader,train=False, return_id=False):
+    def __init__(self, image_list, transform=None, strong_transform=None, target_transform=None, return_paths=False,
+                 loader=default_loader,train=False, return_id=False, is_target=False):
         imgs, labels = make_dataset_nolist(image_list)
         self.imgs = imgs
         self.labels= labels
-        self.transform = transform
+        self.transform = transform # weak argument
+        self.strong_transform = strong_transform # strong argument
         self.target_transform = target_transform
         self.loader = loader
         self.return_paths = return_paths
         self.return_id = return_id
         self.train = train
+        self.is_target = is_target # is target domain
     def __getitem__(self, index):
         """
         Args:
@@ -115,15 +117,23 @@ class ImageFolder(data.Dataset):
         path = self.imgs[index]
         target = self.labels[index]
         img = self.loader(path)
-        img = self.transform(img)
         if self.target_transform is not None:
             target = self.target_transform(target)
-        if self.return_paths:
-            return img, target, path
-        elif self.return_id:
-            return img,target ,index
+        
+        if self.is_target:
+            if self.return_paths:
+                return {'x_w': self.transform(img), 'x_s': self.strong_transform(img), 'path': path, 'y': target}
+            elif self.return_id:
+                return {'x_w': self.transform(img), 'x_s': self.strong_transform(img) , 'index':index, 'y': target}
+            else:
+                return {'x_w': self.transform(img), 'x_s': self.strong_transform(img), 'y': target}
         else:
-            return img, target
+            if self.return_paths:
+                return {'x': self.transform(img), 'y': target, 'path': path}
+            elif self.return_id:
+                return {'x': self.transform(img), 'y': target, 'index':index}
+            else:
+                return {'x': self.transform(img), 'y': target}
 
     def __len__(self):
         return len(self.imgs)

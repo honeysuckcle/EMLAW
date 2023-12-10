@@ -101,25 +101,18 @@ def test(step, dataset_test, name, n_share, G, Cs,
     class_list = [i for i in range(n_share)]
     for batch_idx, data in enumerate(dataset_test):
         with torch.no_grad():
-            img_t, label_t = data[0].cuda(), data[1].cuda()
+            img_t, label_t = data['x'].cuda(), data['y'].cuda()
             feat = G(img_t)
             out_t = Cs[0](feat)
+            out_open = Cs[1](feat)
+
             if batch_idx == 0:
                 open_class = int(out_t.size(1))
                 class_list.append(open_class)
             pred = out_t.data.max(1)[1]
             correct_close += pred.eq(label_t.data).cpu().sum()
-            out_t = F.softmax(out_t)
-            entr = -torch.sum(out_t * torch.log(out_t), 1).data.cpu().numpy()
-            if entropy:
-                pred_unk = -torch.sum(out_t * torch.log(out_t), 1)
-                ind_unk = np.where(entr > thr)[0]
-            else:
-                out_open = Cs[1](feat)
-                out_open = F.softmax(out_open.view(out_t.size(0), 2, -1),1)
-                tmp_range = torch.range(0, out_t.size(0)-1).long().cuda()
-                pred_unk = out_open[tmp_range, 0, pred]
-                ind_unk = np.where(pred_unk.data.cpu().numpy() > 0.5)[0]
+            pred_outlier = out_open.data.max(1)[1]
+            ind_unk = pred_outlier == 1
             pred[ind_unk] = open_class
             correct += pred.eq(label_t.data).cpu().sum()
             pred = pred.cpu().numpy()
@@ -129,36 +122,19 @@ def test(step, dataset_test, name, n_share, G, Cs,
                 correct_ind = np.where(pred[t_ind[0]] == t)
                 per_class_correct[i] += float(len(correct_ind[0]))
                 per_class_num[i] += float(len(t_ind[0]))
+
             size += k
             if open:
                 label_t = label_t.data.cpu().numpy()
                 if batch_idx == 0:
                     label_all = label_t
-                    pred_open = pred_unk.data.cpu().numpy()
                     pred_all = out_t.data.cpu().numpy()
-                    pred_ent = entr
                 else:
-                    pred_open = np.r_[pred_open, pred_unk.data.cpu().numpy()]
-                    pred_ent = np.r_[pred_ent, entr]
                     pred_all = np.r_[pred_all, out_t.data.cpu().numpy()]
                     label_all = np.r_[label_all, label_t]
     if open:
         Y_test = label_binarize(label_all, classes=[i for i in class_list])
-        roc = roc_auc_score(Y_test[:, -1], pred_open)
-        roc_ent = roc_auc_score(Y_test[:, -1], pred_ent)
-        roc_softmax = roc_auc_score(Y_test[:, -1], -np.max(pred_all, axis=1))
-        ## compute best h-score by grid search. Note that we compupte
-        ## this score just to see the difference between learned threshold
-        ## and best one.
-        best_th, best_acc, mean_score = select_threshold(pred_all, pred_open,
-                                                         label_all, class_list)
-
-    else:
-        roc = 0.0
-        roc_ent = 0.0
-        best_th = 0.
-        best_acc = 0.
-        roc_softmax = 0.0
+        
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename=name, format="%(message)s")
     logger.setLevel(logging.INFO)
@@ -174,12 +150,7 @@ def test(step, dataset_test, name, n_share, G, Cs,
               "acc per class %s"%(float(per_class_acc.mean())),
               "acc %s" % float(acc_all),
               "acc close all %s" % float(acc_close_all),
-              "h score %s" % float(h_score),
-              "roc %s"% float(roc),
-              "roc ent %s"% float(roc_ent),
-              "roc softmax %s"% float(roc_softmax),
-              "best hscore %s"%float(best_acc),
-              "best thr %s"%float(best_th)]
+              "h score %s" % float(h_score)]
     logger.info(output)
     print(output)
     return acc_all, h_score

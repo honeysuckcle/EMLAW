@@ -27,19 +27,18 @@ def log_set(kwargs):
     network = kwargs["network"]
     conf_file = kwargs["config_file"]
     script_name = kwargs["script_name"]
-    multi = kwargs["multi"]
-    ln = kwargs['logit_norm']
-    ts = kwargs['train_step']
+    multi = [kwargs["multi"], kwargs['lambda_o'], kwargs['lambda_fix']]
+    cutoff = kwargs['cutoff']
     #args = kwargs["args"]
 
     target_data = os.path.splitext(os.path.basename(target_data))[0]
-    logname = "{file}_{source}2{target}_{network}_hp_{hp}_ln_{ln}_ts_{ts}".format(file=script_name.replace(".py", ""),
+    logname = "{file}_{source}2{target}_{network}_lambda_{hp}_cutoff_{cutoff}".format(file=script_name.replace(".py", ""),
                                                                                source=source_data.split("_")[1],
                                                                                target=target_data,
                                                                                network=network,
                                                                                hp=str(multi),
-                                                                               ln = str(ln),
-                                                                               ts = str(ts))
+                                                                               cutoff=cutoff
+                                                                               )
     logname = os.path.join("record", kwargs["exp_name"],
                            os.path.basename(conf_file).replace(".yaml", ""), logname)
     if not os.path.exists(os.path.dirname(logname)):

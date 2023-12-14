@@ -48,13 +48,13 @@ parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
 parser.add_argument('--cutoff', type=float,
-                    default=0.1,
+                    default=0.3,
                     help='weight factor for adaptation')
 parser.add_argument('--lambda_o', type=float,
                     default=0.1,
                     help='weight factor for outlier classification')
 parser.add_argument('--lambda_fix', type=float,
-                    default=0.1,
+                    default=0.5,
                     help='weight factor for outlier classification')
 args = parser.parse_args()
 

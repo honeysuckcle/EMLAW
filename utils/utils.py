@@ -32,7 +32,7 @@ def log_set(kwargs):
     #args = kwargs["args"]
 
     target_data = os.path.splitext(os.path.basename(target_data))[0]
-    logname = "{file}_{source}2{target}_{network}_lambda_{hp}_cutoff_{cutoff}".format(file=script_name.replace(".py", ""),
+    logname = "{file}_{source}2{target}_{network}_lambda_{hp}_cutoff_{cutoff}_onehot".format(file=script_name.replace(".py", ""),
                                                                                source=source_data.split("_")[1],
                                                                                target=target_data,
                                                                                network=network,

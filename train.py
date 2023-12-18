@@ -185,7 +185,9 @@ def train():
             outlier_inputs = torch.cat((img_t, img_t_s), 0)
             logit_outlier_w, logit_outlier_s = O(G(outlier_inputs)).chunk(2)
             logit_outlier_w, logit_outlier_s = F.softmax(logit_outlier_w, 1), F.softmax(logit_outlier_s, 1)
-            fix_loss = consistency_loss(logit_outlier_w, logit_outlier_s, 'ce')
+            outlier_w = logit_outlier_w.detach()
+            target_w = outlier_w.max(dim=1)[1].long().cuda()
+            fix_loss = consistency_loss(logit_outlier_s, target_w, 'ce')
             all += lambda_fix * fix_loss
             log_values.append(fix_loss.item())
             log_string += "Consistency Loss Outlier Classifier: {:.6f} "

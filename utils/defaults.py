@@ -10,8 +10,9 @@ from models.basenet import ResClassifier_MME
 
 def get_dataloaders(kwargs):
     source_data = kwargs["source_data"]
-    target_data = kwargs["target_data"]
-    evaluation_data = kwargs["evaluation_data"]
+    target_known_data = kwargs["target_known_data"]
+    target_unknown_data = kwargs["target_unknown_data"]
+    share_n, private_n = kwargs["share_n"], kwargs["private_source_n"]
     conf = kwargs["conf"]
     val_data = None
     if "val" in kwargs:
@@ -22,28 +23,28 @@ def get_dataloaders(kwargs):
         val = False
 
     data_transforms = {
-        source_data: transforms.Compose([
-            transforms.Scale((256, 256)),
+        "source": transforms.Compose([
+            transforms.Resize((256, 256)),
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
-        target_data: transforms.Compose([
-            transforms.Scale((256, 256)),
+        "target": transforms.Compose([
+            transforms.Resize((256, 256)),
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
         "eval": transforms.Compose([
-            transforms.Scale((256, 256)),
+            transforms.Resize((256, 256)),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
     }
-    return get_loader(source_data, target_data, evaluation_data,
+    return get_loader(source_data, target_known_data, target_unknown_data, share_n, private_n, 
                       data_transforms,
                       batch_size=conf.data.dataloader.batch_size,
                       return_id=True,
@@ -56,21 +57,21 @@ def get_dataloaders_label(source_data, target_data, target_data_label, evaluatio
 
     data_transforms = {
         source_data: transforms.Compose([
-            transforms.Scale((256, 256)),
+            transforms.Resize((256, 256)),
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
         target_data: transforms.Compose([
-            transforms.Scale((256, 256)),
+            transforms.Resize((256, 256)),
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
         evaluation_data: transforms.Compose([
-            transforms.Scale((256, 256)),
+            transforms.Resize((256, 256)),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])

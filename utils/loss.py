@@ -18,7 +18,7 @@ def ova_loss(out_open, label):
     out_open = F.softmax(out_open, 1)
     label_p = torch.zeros((out_open.size(0),
                            out_open.size(2))).long().cuda()
-    label_range = torch.range(0, out_open.size(0) - 1).long()
+    label_range = torch.arange(0, out_open.size(0)).long()
     label_p[label_range, label] = 1
     label_n = 1 - label_p
     open_loss_pos = torch.mean(torch.sum(-torch.log(out_open[:, 1, :]
@@ -32,4 +32,12 @@ def open_entropy(out_open):
     assert out_open.size(1) == 2
     out_open = F.softmax(out_open, 1)
     ent_open = torch.mean(torch.mean(torch.sum(-out_open * torch.log(out_open + 1e-8), 1), 1))
+    return ent_open
+
+def open_entropy_wa(out_t, out_open):
+    assert len(out_open.size()) == 3
+    assert out_open.size(1) == 2
+    assert out_t.size(1) == out_open.size(2)
+    out_open = F.softmax(out_open, 1)
+    ent_open = torch.mean(torch.sum(out_t * torch.sum(-out_open * torch.log(out_open + 1e-8), 1), 1))
     return ent_open

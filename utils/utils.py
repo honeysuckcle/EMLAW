@@ -23,23 +23,20 @@ def get_model_mme(net, num_class=13, temp=0.05, top=False, norm=True):
 
 def log_set(kwargs):
     source_data = kwargs["source_data"]
-    target_data = kwargs["target_data"]
+    target_data = kwargs["target_known_data"]
     network = kwargs["network"]
     conf_file = kwargs["config_file"]
     script_name = kwargs["script_name"]
     multi = kwargs["multi"]
-    ln = kwargs['logit_norm']
-    ts = kwargs['train_step']
-    #args = kwargs["args"]
+    share_n, private_n = kwargs["share_n"], kwargs["private_source_n"]
 
     target_data = os.path.splitext(os.path.basename(target_data))[0]
-    logname = "{file}_{source}2{target}_{network}_hp_{hp}_ln_{ln}_ts_{ts}".format(file=script_name.replace(".py", ""),
+    logname = "{file}_{source}2{target}_{network}_hp_{hp}_pn_{private_n}".format(file=script_name.replace(".py", ""),
                                                                                source=source_data.split("_")[1],
                                                                                target=target_data,
                                                                                network=network,
                                                                                hp=str(multi),
-                                                                               ln = str(ln),
-                                                                               ts = str(ts))
+                                                                               private_n=str(private_n))
     logname = os.path.join("record", kwargs["exp_name"],
                            os.path.basename(conf_file).replace(".yaml", ""), logname)
     if not os.path.exists(os.path.dirname(logname)):

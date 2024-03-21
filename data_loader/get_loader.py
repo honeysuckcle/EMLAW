@@ -5,19 +5,19 @@ import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
 
 
-def get_loader(source_path, target_path, evaluation_path, transforms,
+def get_loader(source_path, target_known_path, target_unknown_path, share_n, private_n, transforms,
                batch_size=32, return_id=False, balanced=False, val=False, val_data=None):
-    source_folder = ImageFolder(os.path.join(source_path),
-                                transforms[source_path],
+    source_folder = ImageFolder(os.path.join(source_path), None, share_n, private_n,
+                                transforms["source"],
                                 return_id=return_id)
-    target_folder_train = ImageFolder(os.path.join(target_path),
-                                  transform=transforms[target_path],
+    target_folder_train = ImageFolder(os.path.join(target_known_path), os.path.join(target_unknown_path), share_n, private_n,
+                                  transform=transforms["target"],
                                   return_paths=False, return_id=return_id)
     if val:
-        source_val_train = ImageFolder(val_data, transforms[source_path], return_id=return_id)
+        source_val_train = ImageFolder(val_data, None, share_n, private_n, transforms["source"], return_id=return_id)
         target_folder_train = torch.utils.data.ConcatDataset([target_folder_train, source_val_train])
-        source_val_test = ImageFolder(val_data, transforms[evaluation_path], return_id=return_id)
-    eval_folder_test = ImageFolder(os.path.join(evaluation_path),
+        source_val_test = ImageFolder(val_data, None, share_n, private_n, transforms["eval"], return_id=return_id)
+    eval_folder_test = ImageFolder(os.path.join(target_known_path), os.path.join(target_unknown_path), share_n, private_n,
                                    transform=transforms["eval"],
                                    return_paths=True)
 

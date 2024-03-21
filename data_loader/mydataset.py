@@ -55,22 +55,43 @@ def default_flist_reader(flist):
 def default_loader(path):
     return Image.open(path).convert('RGB')
 
-
-def make_dataset_nolist(image_list):
+def make_source_dataset(image_list, share_n, private_n):
     with open(image_list) as f:
         image_index = [x.split(' ')[0] for x in f.readlines()]
     with open(image_list) as f:
         label_list = []
         selected_list = []
-        for ind, x in enumerate(f.readlines()):
+        for idx, x in enumerate(f.readlines()):
             label = x.split(' ')[1].strip()
-            label_list.append(int(label))
-            selected_list.append(ind)
+            if int(label) < share_n + private_n:
+                label_list.append(int(label))
+                selected_list.append(idx)
         image_index = np.array(image_index)
         label_list = np.array(label_list)
     image_index = image_index[selected_list]
+    assert len(image_index) == len(label_list)
     return image_index, label_list
 
+def make_target_dataset(known_list, unknown_list, known_n):
+    image_index = []
+    label_list = []
+    with open(known_list) as f:
+        for x in f.readlines():
+            image_index.append(x.split(' ')[0])
+            label_list.append(int(x.split(' ')[1].strip()))
+
+    assert len(image_index) == len(label_list)
+
+    with open(unknown_list) as f:
+        for x in f.readlines():
+            image_index.append(x.strip())
+            label_list.append(known_n)
+        
+    image_index = np.array(image_index)
+    label_list = np.array(label_list)
+
+    assert len(image_index) == len(label_list)
+    return image_index, label_list
 
 class ImageFolder(data.Dataset):
     """A generic data loader where the images are arranged in this way: ::
@@ -93,9 +114,11 @@ class ImageFolder(data.Dataset):
         imgs (list): List of (image path, class_index) tuples
     """
 
-    def __init__(self, image_list, transform=None, target_transform=None, return_paths=False,
-                 loader=default_loader,train=False, return_id=False):
-        imgs, labels = make_dataset_nolist(image_list)
+    def __init__(self, knwon_list, unkonwn_list, share_n, private_s_n, transform=None, target_transform=None, return_paths=False, loader=default_loader,train=False, return_id=False):
+        if unkonwn_list:
+            imgs, labels = make_target_dataset(knwon_list, unkonwn_list, share_n+private_s_n)
+        else:
+            imgs, labels = make_source_dataset(knwon_list, share_n, private_s_n)
         self.imgs = imgs
         self.labels= labels
         self.transform = transform

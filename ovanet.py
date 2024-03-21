@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from apex import amp, optimizers
 from utils.utils import log_set, save_model
-from utils.loss import ova_loss, open_entropy_wa
+from utils.loss import ova_loss, open_entropy
 from utils.lr_schedule import inv_lr_scheduler
 from utils.defaults import get_dataloaders, get_models
 from eval import test
@@ -145,13 +145,9 @@ def train():
                       open_loss_pos.item(), open_loss_neg.item()]
         if not args.no_adapt:
             feat_t = G(img_t)
-            out_t = C1(feat_t)
             out_open_t = C2(feat_t)
             out_open_t = out_open_t.view(img_t.size(0), 2, -1)
-            with torch.no_grad():
-                out_t = F.softmax(out_t, 1)
-                weight = out_t.detach()
-            ent_open = open_entropy_wa(weight, out_open_t)
+            ent_open = open_entropy(out_open_t)
             all += args.multi * ent_open
             log_values.append(ent_open.item())
             log_string += "Loss Open Target: {:.6f}"

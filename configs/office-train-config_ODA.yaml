@@ -3,7 +3,7 @@ data:
     name: office # choices are ['office', 'officehome', 'caltech-imagenet', 'visda2017']
     n_share: 10 # number of classes to be shared
     n_source_private: 0 # number of classes in source private domain
-    n_total: 31 # number of classes in total
+    n_total: 21 # number of classes in total
   dataloader:
     class_balance: true #
     data_workers: 3 # how many workers to use for train dataloaders

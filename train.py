@@ -8,12 +8,11 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from apex import amp, optimizers
 from utils.utils import log_set, save_model
-from utils.loss import ova_loss, open_entropy
+from utils.loss import ova_loss, open_entropy_wa
 from utils.lr_schedule import inv_lr_scheduler
 from utils.defaults import get_dataloaders, get_models
 from eval import test
 import argparse
-from utils.LogitNorm import LogitNorm
 
 parser = argparse.ArgumentParser(description='Pytorch OVANet',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -129,11 +128,9 @@ def train():
         out_s = C1(feat)
         out_open = C2(feat)
         ## source classification loss
-        out_s = LogitNorm(out_s, temp=logit_norm)
         loss_s = criterion(out_s, label_s)
         ## open set loss for source
         out_open = out_open.view(out_s.size(0), 2, -1)
-        out_open = LogitNorm(out_open, dim=1, temp=logit_norm)
         open_loss_pos, open_loss_neg = ova_loss(out_open, label_s)
         ## b x 2 x C
         loss_open = 0.5 * (open_loss_pos + open_loss_neg)
@@ -147,14 +144,20 @@ def train():
         log_values = [step, conf.train.min_step,
                       loss_s.item(),  loss_open.item(),
                       open_loss_pos.item(), open_loss_neg.item()]
+        
         if not args.no_adapt:
             feat_t = G(img_t)
+            out_t = C1(feat_t)
             out_open_t = C2(feat_t)
             out_open_t = out_open_t.view(img_t.size(0), 2, -1)
-            ent_open = open_entropy(out_open_t)
+            with torch.no_grad():
+                out_t = F.softmax(out_t, 1)
+                weight = out_t.detach()
+            ent_open = open_entropy_wa(weight, out_open_t)
             all += args.multi * ent_open
             log_values.append(ent_open.item())
             log_string += "Loss Open Target: {:.6f}"
+
         with amp.scale_loss(all, [opt_g, opt_c]) as scaled_loss:
             scaled_loss.backward()
         opt_g.step()

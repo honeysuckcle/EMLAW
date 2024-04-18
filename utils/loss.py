@@ -27,9 +27,10 @@ def ova_loss(out_open, label):
                                                 1e-8) * label_n, 1)[0])
     return open_loss_pos, open_loss_neg
 
-def open_entropy(out_open):
+def open_entropy_wa(out_t, out_open):
     assert len(out_open.size()) == 3
     assert out_open.size(1) == 2
+    assert out_t.size(1) == out_open.size(2)
     out_open = F.softmax(out_open, 1)
-    ent_open = torch.mean(torch.mean(torch.sum(-out_open * torch.log(out_open + 1e-8), 1), 1))
+    ent_open = torch.mean(torch.sum(out_t * torch.sum(-out_open * torch.log(out_open + 1e-8), 1), 1))
     return ent_open

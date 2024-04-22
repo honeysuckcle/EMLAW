@@ -7,9 +7,9 @@ This repository contains the code for the paper "Adaptive Weighted Entropy Minim
 The code is written in Python 3.6 and requires the following packages:
 
 - [apex](https://github.com/NVIDIA/apex) 
-- python 3.8
-- torch==1.6.0
-- torchvision==0.7.0
+- python 3.8.10
+- torch 1.12.0+cu113
+- torchvision 0.13.0+cu113
 - pyyaml==5.4.1
 - easydict
 - neptune

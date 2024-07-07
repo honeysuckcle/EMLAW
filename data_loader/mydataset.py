@@ -118,18 +118,18 @@ class ImageFolder(data.Dataset):
 
         path = self.imgs[index]
         target = self.labels[index]
-        img = self.loader(path)
-        img = self.transform(img)
+        img_PIL = self.loader(path)
+        img = self.transform(img_PIL)
         if self.target_transform is not None:
             target = self.target_transform(target)
 
         if self.need_aug and self.transform_aug is not None:
             x_aug = []
             for i in range(self.aug_time):
-                img_aug = self.transform_aug[i](img)
+                img_aug = self.transform_aug[i](img_PIL)
                 x_aug.append(img_aug)
             if self.return_paths:
-                return img, x_aug,target, path
+                return img, x_aug, target, path
             elif self.return_id:
                 return img, x_aug, target ,index
             else:

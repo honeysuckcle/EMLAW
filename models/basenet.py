@@ -30,13 +30,22 @@ class ResBase(nn.Module):
             self.features = nn.Sequential(*mod)
 
 
+    # def forward(self, x):
+    #     x = self.features(x)
+    #     if self.top:
+    #         return x
+    #     else:
+    #         x = x.view(x.size(0), self.dim)
+    #         return x
     def forward(self, x):
-        x = self.features(x)
-        if self.top:
-            return x
-        else:
+        print(f"Input shape: {x.shape}")
+        for i, layer in enumerate(self.features):
+            x = layer(x)
+            print(f"After layer {i} ({layer}): shape {x.shape}")
+        if not self.top:
             x = x.view(x.size(0), self.dim)
-            return x
+            print(f"After view: {x.shape}")
+        return x
 
 
 class VGGBase(nn.Module):

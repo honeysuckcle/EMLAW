@@ -1,1 +1,6 @@
 u.jpg
+txt/
+data/
+*/__pycache__/*
+__pycache__/
+record/

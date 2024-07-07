@@ -16,14 +16,14 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Pytorch OVANet',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--config', type=str, default='config.yaml',
+parser.add_argument('--config', type=str, default='configs/office-train-config_OPDA.yaml',
                     help='/path/to/config/file')
 
 parser.add_argument('--source_data', type=str,
-                    default='./utils/source_list.txt',
+                    default='./txt/source_amazon_opda.txt',
                     help='path to source list')
 parser.add_argument('--target_data', type=str,
-                    default='./utils/target_list.txt',
+                    default='./txt/target_dslr_opda.txt',
                     help='path to target list')
 parser.add_argument('--log-interval', type=int,
                     default=100,
@@ -35,7 +35,7 @@ parser.add_argument('--network', type=str,
                     default='resnet50',
                     help='network name')
 parser.add_argument("--gpu_devices", type=int, nargs='+',
-                    default=None, help="")
+                    default=[0], help="")
 parser.add_argument("--no_adapt",
                     default=False, action='store_true')
 parser.add_argument("--save_model",
@@ -47,7 +47,7 @@ parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
 parser.add_argument('--aug_source',
-                    default=True,
+                    default=False,
                     help='use augmentation for source')
 parser.add_argument('--aug_target_train',default=True,
                     help='use augmentation for target train')
@@ -56,8 +56,8 @@ parser.add_argument('--aug_target_test',default=False,
 args = parser.parse_args()
 
 config_file = args.config
-conf = yaml.load(open(config_file))
-save_config = yaml.load(open(config_file))
+conf = yaml.load(open(config_file), Loader=yaml.FullLoader)
+save_config = yaml.load(open(config_file), Loader=yaml.FullLoader)
 conf = easydict.EasyDict(conf)
 gpu_devices = ','.join([str(id) for id in args.gpu_devices])
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_devices
@@ -125,19 +125,22 @@ def train():
         # joint augmentation of source
         if args.aug_source:
             img_s_aug = data_s[1]
-            for i in range(1, aug_num):
+            label_s_single = label_s
+            for i in range(0, aug_num):
                 img_s_aug_i = img_s_aug[i]
                 img_s_aug_i = Variable(img_s_aug_i.cuda())
                 img_s = torch.cat((img_s, img_s_aug_i), 0)
-                label_s = torch.cat((label_s, label_s), 0)
+                label_s = torch.cat((label_s, label_s_single), 0)
             
         img_t = Variable(img_t.cuda())
+        print(f"img_s shape: {img_s.shape}, img_t shape: {img_t.shape}")
         opt_g.zero_grad()
         opt_c.zero_grad()
         C2.module.weight_norm()
 
         ## Source loss calculation
         feat = G(img_s)
+        print(f"feat shape: {feat.shape}")
         out_s = C1(feat)
         out_open = C2(feat)
         ## source classification loss
@@ -159,13 +162,15 @@ def train():
                       open_loss_pos.item(), open_loss_neg.item()]
         
         if not args.no_adapt:
+            print(f"img_t shape before G: {img_t.shape}")
+            print(f"img_t min: {img_t.min()}, max: {img_t.max()}")
             feat_t = G(img_t)
             out_open_t = C2(feat_t)
             out_open_t = out_open_t.view(img_t.size(0), 2, -1)
             with torch.no_grad():
                 if args.aug_target_train:
                     out_t = [F.softmax(C1(feat_t),1)]
-                    for i in range(1, aug_num):
+                    for i in range(0, aug_num):
                         img_t_aug_i = img_t_aug[i]
                         img_t_aug_i = Variable(img_t_aug_i.cuda())
                         feat_t_aug_i = G(img_t_aug_i)

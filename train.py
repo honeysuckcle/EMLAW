@@ -46,9 +46,13 @@ parser.add_argument("--save_path", type=str,
 parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
-parser.add_argument('--logit_norm', type=float,
-                    default=0.1,
-                    help='use logitNorm')
+parser.add_argument('--aug_source',
+                    default=True,
+                    help='use augmentation for source')
+parser.add_argument('--aug_target_train',default=True,
+                    help='use augmentation for target train')
+parser.add_argument('--aug_target_test',default=False,
+                    help='use augmentation for target test')
 args = parser.parse_args()
 
 config_file = args.config
@@ -58,7 +62,6 @@ conf = easydict.EasyDict(conf)
 gpu_devices = ','.join([str(id) for id in args.gpu_devices])
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_devices
 args.cuda = torch.cuda.is_available()
-logit_norm = args.logit_norm
 
 source_data = args.source_data
 target_data = args.target_data
@@ -78,7 +81,7 @@ inputs["conf"] = conf
 inputs["script_name"] = script_name
 inputs["num_class"] = num_class
 inputs["config_file"] = config_file
-inputs["logit_norm"] = logit_norm
+inputs["aug"]= [args.aug_source, args.aug_target_train, args.aug_target_test]
 
 source_loader, target_loader, \
 test_loader, target_folder = get_dataloaders(inputs)
@@ -97,6 +100,7 @@ def train():
     data_iter_t = iter(target_loader)
     len_train_source = len(source_loader)
     len_train_target = len(target_loader)
+    aug_num = conf.data.dataloader.num_aug_times
     for step in range(conf.train.min_step + 1):
         G.train()
         C1.train()
@@ -114,10 +118,19 @@ def train():
                          init_lr=conf.train.lr,
                          max_iter=conf.train.min_step)
         img_s = data_s[0]
-        label_s = data_s[1]
-        img_t = data_t[0]
+        label_s = data_s[2]
+        img_t, img_t_aug = data_t[0], data_t[1]
         img_s, label_s = Variable(img_s.cuda()), \
                          Variable(label_s.cuda())
+        # joint augmentation of source
+        if args.aug_source:
+            img_s_aug = data_s[1]
+            for i in range(1, aug_num):
+                img_s_aug_i = img_s_aug[i]
+                img_s_aug_i = Variable(img_s_aug_i.cuda())
+                img_s = torch.cat((img_s, img_s_aug_i), 0)
+                label_s = torch.cat((label_s, label_s), 0)
+            
         img_t = Variable(img_t.cuda())
         opt_g.zero_grad()
         opt_c.zero_grad()
@@ -147,12 +160,22 @@ def train():
         
         if not args.no_adapt:
             feat_t = G(img_t)
-            out_t = C1(feat_t)
             out_open_t = C2(feat_t)
             out_open_t = out_open_t.view(img_t.size(0), 2, -1)
             with torch.no_grad():
-                out_t = F.softmax(out_t, 1)
-                weight = out_t.detach()
+                if args.aug_target_train:
+                    out_t = [F.softmax(C1(feat_t),1)]
+                    for i in range(1, aug_num):
+                        img_t_aug_i = img_t_aug[i]
+                        img_t_aug_i = Variable(img_t_aug_i.cuda())
+                        feat_t_aug_i = G(img_t_aug_i)
+                        out_t_aug_i = C1(feat_t_aug_i)
+                        out_t_aug_i = F.softmax(out_t_aug_i,1)
+                        out_t.append(out_t_aug_i)
+                    out_t = torch.stack(out_t, 0)
+                    weight = out_t.mean(0)
+                else:
+                    weight = F.softmax(C1(feat_t),1)
             ent_open = open_entropy_wa(weight, out_open_t)
             all += args.multi * ent_open
             log_values.append(ent_open.item())
@@ -168,7 +191,7 @@ def train():
             print(log_string.format(*log_values))
         if step > 0 and step % conf.test.test_interval == 0:
             acc_o, h_score = test(step, test_loader, logname, n_share, G,
-                                  [C1, C2], open=open)
+                                  [C1, C2], open=open, use_aug=args.aug_target_test)
             print("acc all %s h_score %s " % (acc_o, h_score))
             G.train()
             C1.train()

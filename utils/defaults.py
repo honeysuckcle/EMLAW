@@ -6,6 +6,7 @@ from apex import amp, optimizers
 from data_loader.get_loader import get_loader, get_loader_label
 from .utils import get_model_mme
 from models.basenet import ResClassifier_MME
+from .randaugment import RandAugment
 
 
 def get_dataloaders(kwargs):
@@ -36,6 +37,14 @@ def get_dataloaders(kwargs):
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ]),
+        'aug': [transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(224),
+            RandAugment(conf.data.dataloader.num_aug_types),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ]) for _ in range(conf.data.dataloader.num_aug_times)],
         "eval": transforms.Compose([
             transforms.Resize((256, 256)),
             transforms.CenterCrop(224),
@@ -45,6 +54,7 @@ def get_dataloaders(kwargs):
     }
     return get_loader(source_data, target_data, evaluation_data,
                       data_transforms,
+                      aug_time=conf.data.dataloader.num_aug_times,
                       batch_size=conf.data.dataloader.batch_size,
                       return_id=True,
                       balanced=conf.data.dataloader.class_balance,

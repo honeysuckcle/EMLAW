@@ -31,11 +31,12 @@ def log_set(kwargs):
     #args = kwargs["args"]
 
     target_data = os.path.splitext(os.path.basename(target_data))[0]
-    logname = "{file}_{source}2{target}_{network}_hp_{hp}".format(file=script_name.replace(".py", ""),
+    logname = "{file}_{source}2{target}_{network}_hp_{hp}_aug_{aug}".format(file=script_name.replace(".py", ""),
                                                                                source=source_data.split("_")[1],
                                                                                target=target_data,
                                                                                network=network,
-                                                                               hp=str(multi))
+                                                                               hp=str(multi),
+                                                                               aug=str(kwargs["aug"]))
     logname = os.path.join("record", kwargs["exp_name"],
                            os.path.basename(conf_file).replace(".yaml", ""), logname)
     if not os.path.exists(os.path.dirname(logname)):

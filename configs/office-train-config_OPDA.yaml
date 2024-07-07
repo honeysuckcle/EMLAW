@@ -8,6 +8,8 @@ data:
     class_balance: true #
     data_workers: 3 # how many workers to use for train dataloaders
     batch_size: 36 # batch_size for source domain and target domain respectively
+    num_aug_times: 5 # number of augmentations for each image
+    num_aug_types: 3 # number of augmentation types for each image
 model:
   base_model: resnet50 # choices=['resnet50', 'vgg16']
   temp: 0.05

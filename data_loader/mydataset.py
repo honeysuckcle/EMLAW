@@ -93,17 +93,21 @@ class ImageFolder(data.Dataset):
         imgs (list): List of (image path, class_index) tuples
     """
 
-    def __init__(self, image_list, transform=None, target_transform=None, return_paths=False,
-                 loader=default_loader,train=False, return_id=False):
+    def __init__(self, image_list, transform=None, transform_aug=None, aug_time = 0, target_transform=None, return_paths=False,
+                 loader=default_loader,train=False, return_id=False, need_aug=False):
         imgs, labels = make_dataset_nolist(image_list)
         self.imgs = imgs
         self.labels= labels
         self.transform = transform
+        self.transform_aug = transform_aug
         self.target_transform = target_transform
         self.loader = loader
         self.return_paths = return_paths
         self.return_id = return_id
         self.train = train
+        self.need_aug = need_aug
+        self.aug_time = aug_time
+    
     def __getitem__(self, index):
         """
         Args:
@@ -118,12 +122,25 @@ class ImageFolder(data.Dataset):
         img = self.transform(img)
         if self.target_transform is not None:
             target = self.target_transform(target)
-        if self.return_paths:
-            return img, target, path
-        elif self.return_id:
-            return img,target ,index
+
+        if self.need_aug and self.transform_aug is not None:
+            x_aug = []
+            for i in range(self.aug_time):
+                img_aug = self.transform_aug[i](img)
+                x_aug.append(img_aug)
+            if self.return_paths:
+                return img, x_aug,target, path
+            elif self.return_id:
+                return img, x_aug, target ,index
+            else:
+                return img, x_aug, target
         else:
-            return img, target
+            if self.return_paths:
+                return img, target, path
+            elif self.return_id:
+                return img,target ,index
+            else:
+                return img, target
 
     def __len__(self):
         return len(self.imgs)

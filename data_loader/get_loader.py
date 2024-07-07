@@ -5,21 +5,25 @@ import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
 
 
-def get_loader(source_path, target_path, evaluation_path, transforms,
+def get_loader(source_path, target_path, evaluation_path, transforms, aug_time=0,
                batch_size=32, return_id=False, balanced=False, val=False, val_data=None):
     source_folder = ImageFolder(os.path.join(source_path),
                                 transforms[source_path],
-                                return_id=return_id)
+                                transforms['aug'], aug_time=aug_time,
+                                return_id=return_id, need_aug=True)
     target_folder_train = ImageFolder(os.path.join(target_path),
-                                  transform=transforms[target_path],
-                                  return_paths=False, return_id=return_id)
+                                  transforms[target_path],
+                                  transforms['aug'], aug_time=aug_time,
+                                  return_paths=False, return_id=return_id, need_aug=True)
     if val:
         source_val_train = ImageFolder(val_data, transforms[source_path], return_id=return_id)
         target_folder_train = torch.utils.data.ConcatDataset([target_folder_train, source_val_train])
         source_val_test = ImageFolder(val_data, transforms[evaluation_path], return_id=return_id)
     eval_folder_test = ImageFolder(os.path.join(evaluation_path),
                                    transform=transforms["eval"],
-                                   return_paths=True)
+                                   transform_aug = transforms['aug'],
+                                   aug_time=aug_time,
+                                   return_paths=True, need_aug=True)
 
     if balanced:
         freq = Counter(source_folder.labels)

@@ -88,7 +88,7 @@ def feat_get(step, G, Cs, dataset_source, dataset_target, save_path,
 
 
 def test(step, dataset_test, name, n_share, G, Cs,
-         open_class = None, open=False, entropy=False, thr=None):
+         open_class = None, open=False, entropy=False, thr=None, use_aug=False):
     G.eval()
     for c in Cs:
         c.eval()
@@ -101,9 +101,19 @@ def test(step, dataset_test, name, n_share, G, Cs,
     class_list = [i for i in range(n_share)]
     for batch_idx, data in enumerate(dataset_test):
         with torch.no_grad():
-            img_t, label_t = data[0].cuda(), data[1].cuda()
+            img_t, img_t_aug,label_t = data[0].cuda(), data[1].cuda(), data[2].cuda()
             feat = G(img_t)
-            out_t = Cs[0](feat)
+            if use_aug:
+                out_t = [F.softmax(Cs[0](feat),1)]
+                for i in range(img_t_aug.size(0)):
+                    feat_aug = G(img_t_aug[i])
+                    out_t_aug = Cs[0](feat_aug)
+                    out_t_aug = F.softmax(out_t_aug, 1)
+                    out_t.append(out_t_aug)
+                out_t = torch.stack(out_t, 0)
+                out_t = out_t.mean(0)
+            else:
+                out_t = Cs[0](feat)
             if batch_idx == 0:
                 open_class = int(out_t.size(1))
                 class_list.append(open_class)

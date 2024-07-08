@@ -16,14 +16,14 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Pytorch OVANet',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--config', type=str, default='config.yaml',
+parser.add_argument('--config', type=str, default='configs/office-train-config_OPDA.yaml',
                     help='/path/to/config/file')
 
 parser.add_argument('--source_data', type=str,
-                    default='./utils/source_list.txt',
+                    default='./txt/source_amazon_opda.txt',
                     help='path to source list')
 parser.add_argument('--target_data', type=str,
-                    default='./utils/target_list.txt',
+                    default='./txt/target_dslr_opda.txt',
                     help='path to target list')
 parser.add_argument('--log-interval', type=int,
                     default=100,
@@ -35,7 +35,7 @@ parser.add_argument('--network', type=str,
                     default='resnet50',
                     help='network name')
 parser.add_argument("--gpu_devices", type=int, nargs='+',
-                    default=None, help="")
+                    default=[0], help="")
 parser.add_argument("--no_adapt",
                     default=False, action='store_true')
 parser.add_argument("--save_model",

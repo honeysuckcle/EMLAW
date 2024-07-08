@@ -83,8 +83,7 @@ inputs["num_class"] = num_class
 inputs["config_file"] = config_file
 inputs["aug"]= [args.aug_source, args.aug_target_train, args.aug_target_test]
 
-source_loader, target_loader, \
-test_loader, target_folder = get_dataloaders(inputs)
+source_loader, target_loader, test_loader, target_folder = get_dataloaders(inputs)
 
 logname = log_set(inputs)
 

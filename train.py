@@ -47,11 +47,11 @@ parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
 parser.add_argument('--aug_source',
-                    default=False,
+                    default=True,
                     help='use augmentation for source')
-parser.add_argument('--aug_target_train',default=False,
+parser.add_argument('--aug_target_train',default=True,
                     help='use augmentation for target train')
-parser.add_argument('--aug_target_test',default=False,
+parser.add_argument('--aug_target_test',default=True,
                     help='use augmentation for target test')
 args = parser.parse_args()
 
@@ -132,7 +132,7 @@ def train():
                 label_s = torch.cat((label_s, label_s_single), 0)
             
         img_t = Variable(img_t.cuda())
-        print(f"img_s shape: {img_s.shape}, img_t shape: {img_t.shape}")
+        # print(f"img_s shape: {img_s.shape}, img_t shape: {img_t.shape}")
         opt_g.zero_grad()
         opt_c.zero_grad()
         C2.module.weight_norm()
@@ -162,8 +162,8 @@ def train():
                       open_loss_pos.item(), open_loss_neg.item()]
         
         if not args.no_adapt:
-            print(f"img_t shape before G: {img_t.shape}")
-            print(f"img_t min: {img_t.min()}, max: {img_t.max()}")
+            # print(f"img_t shape before G: {img_t.shape}")
+            # print(f"img_t min: {img_t.min()}, max: {img_t.max()}")
             feat_t = G(img_t)
             out_open_t = C2(feat_t)
             out_open_t = out_open_t.view(img_t.size(0), 2, -1)

@@ -49,7 +49,7 @@ parser.add_argument('--multi', type=float,
 parser.add_argument('--aug_source',
                     default=False,
                     help='use augmentation for source')
-parser.add_argument('--aug_target_train',default=True,
+parser.add_argument('--aug_target_train',default=False,
                     help='use augmentation for target train')
 parser.add_argument('--aug_target_test',default=False,
                     help='use augmentation for target test')
@@ -139,6 +139,7 @@ def train():
         C2.module.weight_norm()
 
         ## Source loss calculation
+        print(f"img_s min: {img_s.min()}, max: {img_s.max()}")
         feat = G(img_s)
         print(f"feat shape: {feat.shape}")
         out_s = C1(feat)

@@ -38,7 +38,7 @@ class ResBase(nn.Module):
     #         x = x.view(x.size(0), self.dim)
     #         return x
     def forward(self, x):
-        print(f"Input shape: {x.shape}")
+        print(f"Input shape: {x.shape}, dtype: {x.dtype}, device: {x.device}")
         for i, layer in enumerate(self.features):
             x = layer(x)
             print(f"After layer {i} ({layer}): shape {x.shape}")

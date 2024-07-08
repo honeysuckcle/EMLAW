@@ -101,7 +101,7 @@ def test(step, dataset_test, name, n_share, G, Cs,
     class_list = [i for i in range(n_share)]
     for batch_idx, data in enumerate(dataset_test):
         with torch.no_grad():
-            img_t, img_t_aug,label_t = data[0].cuda(), data[1].cuda(), data[2].cuda()
+            img_t, img_t_aug, label_t = data[0].cuda(), data[1].cuda(), data[2].cuda()
             feat = G(img_t)
             if use_aug:
                 out_t = [F.softmax(Cs[0](feat),1)]

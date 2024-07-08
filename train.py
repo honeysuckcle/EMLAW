@@ -47,11 +47,11 @@ parser.add_argument('--multi', type=float,
                     default=0.1,
                     help='weight factor for adaptation')
 parser.add_argument('--aug_source',
-                    default=True,
+                    default=False,
                     help='use augmentation for source')
 parser.add_argument('--aug_target_train',default=True,
                     help='use augmentation for target train')
-parser.add_argument('--aug_target_test',default=True,
+parser.add_argument('--aug_target_test',default=False,
                     help='use augmentation for target test')
 args = parser.parse_args()
 

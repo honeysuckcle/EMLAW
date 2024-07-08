@@ -138,9 +138,9 @@ def train():
         C2.module.weight_norm()
 
         ## Source loss calculation
-        print(f"img_s min: {img_s.min()}, max: {img_s.max()}")
+        # print(f"img_s min: {img_s.min()}, max: {img_s.max()}")
         feat = G(img_s)
-        print(f"feat shape: {feat.shape}")
+        # print(f"feat shape: {feat.shape}")
         out_s = C1(feat)
         out_open = C2(feat)
         ## source classification loss
